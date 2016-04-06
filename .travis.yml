@@ -30,6 +30,7 @@ script:
   - make giflib
   - make libconfig
   - make bzip2
+  - make mbedtls
   - make install
 
 before_deploy:
