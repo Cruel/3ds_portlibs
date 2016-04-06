@@ -1,0 +1,20 @@
+--- mbedtls-2.2.1-orig/library/net.c	2016-01-04 21:38:17.000000000 -0700
++++ mbedtls-2.2.1/library/net.c	2016-04-05 15:10:51.657462334 -0600
+@@ -384,15 +384,9 @@
+ 
+             memcpy( client_ip, &addr4->sin_addr.s_addr, *ip_len );
+         }
+-        else
++        else // IPv6, not supported by 3DS/libctru
+         {
+-            struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *) &client_addr;
+-            *ip_len = sizeof( addr6->sin6_addr.s6_addr );
+-
+-            if( buf_size < *ip_len )
+-                return( MBEDTLS_ERR_NET_BUFFER_TOO_SMALL );
+-
+-            memcpy( client_ip, &addr6->sin6_addr.s6_addr, *ip_len);
++	       return( MBEDTLS_ERR_NET_BUFFER_TOO_SMALL );
+         }
+     }
+ 
