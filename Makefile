@@ -93,10 +93,10 @@ XZ_VERSION           := $(XZ)-5.2.2
 XZ_SRC               := $(XZ_VERSION).tar.xz
 XZ_DOWNLOAD          := "http://tukaani.org/xz/xz-5.2.2.tar.xz"
 
-MBED				 := mbedtls
-MBED_VERSION		 := $(MBED)-2.2.1
-MBED_SRC  			 := $(MBED_VERSION).tgz
-MBED_DOWNLOAD  		 := "https://tls.mbed.org/download/mbedtls-2.2.1-gpl.tgz"
+MBED                 := mbedtls
+MBED_VERSION 	     := $(MBED)-2.2.1
+MBED_SRC             := $(MBED_VERSION).tgz
+MBED_DOWNLOAD        := "https://tls.mbed.org/download/mbedtls-2.2.1-gpl.tgz"
 
 export PORTLIBS        := $(DEVKITPRO)/portlibs/3ds
 export PATH            := $(DEVKITARM)/bin:$(PATH)
