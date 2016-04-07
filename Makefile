@@ -93,6 +93,11 @@ XZ_VERSION           := $(XZ)-5.2.2
 XZ_SRC               := $(XZ_VERSION).tar.xz
 XZ_DOWNLOAD          := "http://tukaani.org/xz/xz-5.2.2.tar.xz"
 
+MBED                 := mbedtls
+MBED_VERSION 	     := $(MBED)-2.2.1
+MBED_SRC             := $(MBED_VERSION).tgz
+MBED_DOWNLOAD        := "https://tls.mbed.org/download/mbedtls-2.2.1-gpl.tgz"
+
 export PORTLIBS        := $(DEVKITPRO)/portlibs/3ds
 export PATH            := $(DEVKITARM)/bin:$(PATH)
 export PKG_CONFIG_PATH := $(PORTLIBS)/lib/pkgconfig
@@ -120,7 +125,8 @@ export LDFLAGS         := -L$(PORTLIBS)/lib
 	$(GIFLIB) \
 	$(LIBCONFIG) \
 	$(BZIP2) \
-	$(XZ)
+	$(XZ) \
+	$(MBED)
 
 all:
 	@echo "Please choose one of the following targets:"
@@ -143,6 +149,7 @@ all:
 	@echo "  $(LIBCONFIG)"
 	@echo "  $(BZIP2)"
 	@echo "  $(XZ)"
+	@echo "  $(MBED) (requires zlib to be installed)"
 
 $(FREETYPE): $(FREETYPE_SRC)
 	@[ -d $(FREETYPE_VERSION) ] || tar -xaf $<
@@ -227,6 +234,14 @@ $(LIBMAD): $(LIBMAD_SRC)
 	 ./configure --prefix=$(PORTLIBS) --host=arm-none-eabi --disable-shared --enable-static
 	@$(MAKE) -C $(LIBMAD_VERSION)
 
+$(MBED): $(MBED_SRC)
+	@[ -d $(MBED_VERSION) ] || tar xaf $<
+	@cd $(MBED_VERSION) && \
+	 patch -Np1 -i ../libmbedtls-2.2.1.patch && \
+	 cmake -DCMAKE_TOOLCHAIN_FILE=../arm.cmake -DCMAKE_INSTALL_PREFIX=$(PORTLIBS) -DENABLE_ZLIB_SUPPORT=TRUE -DENABLE_TESTING=FALSE -DENABLE_PROGRAMS=FALSE
+	@$(MAKE) -C $(MBED_VERSION)
+
+
 $(LIBOGG): $(LIBOGG_SRC)
 	@[ -d $(LIBOGG_VERSION) ] || tar -xaf $<
 	@cd $(LIBOGG_VERSION) && \
@@ -301,6 +316,8 @@ $(BZIP2_SRC):
 	wget -O $@ $(BZIP2_DOWNLOAD)
 $(XZ_SRC):
 	wget -O $@ $(XZ_DOWNLOAD)
+$(MBED_SRC):
+	wget -O $@ $(MBED_DOWNLOAD) --no-check-certificate
 
 install-zlib: 
 	@$(MAKE) -C $(ZLIB_VERSION) install
@@ -324,7 +341,7 @@ install:
 	@[ ! -d $(LIBCONFIG_VERSION) ] || $(MAKE) -C $(LIBCONFIG_VERSION) install
 	@[ ! -d $(BZIP2_VERSION) ] || $(MAKE) -C $(BZIP2_VERSION) PREFIX="$(PORTLIBS)" install
 	@[ ! -d $(XZ_VERSION) ] || $(MAKE) -C $(XZ_VERSION) install
-
+	@[ ! -d $(MBED_VERSION)/build ] || $(MAKE) -C $(MBED_VERSION) install 
 clean:
 	@$(RM) -r $(FREETYPE_VERSION)
 	@$(RM) -r $(LIBEXIF_VERSION)
@@ -345,3 +362,4 @@ clean:
 	@$(RM) -r $(LIBCONFIG_VERSION)
 	@$(RM) -r $(BZIP2_VERSION)
 	@$(RM) -r $(XZ_VERSION)
+	@$(RM) -r $(MBED_VERSION) 
