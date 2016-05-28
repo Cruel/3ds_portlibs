@@ -43,11 +43,6 @@ LIBXML2_VERSION      := $(LIBXML2)-2.9.3
 LIBXML2_SRC          := $(LIBXML2_VERSION).tar.gz
 LIBXML2_DOWNLOAD     := "http://xmlsoft.org/sources/libxml2-2.9.3.tar.gz"
 
-OPENAL               := openal-soft
-OPENAL_VERSION       := $(OPENAL)-1.16.0
-OPENAL_SRC           := $(OPENAL_VERSION).tar.bz2
-OPENAL_DOWNLOAD      := "http://kcat.strangesoft.net/openal-releases/openal-soft-1.17.0.tar.bz2"
-
 JANSSON              := jansson
 JANSSON_VERSION      := $(JANSSON)-2.7
 JANSSON_SRC          := $(JANSSON_VERSION).tar.gz
@@ -93,10 +88,15 @@ XZ_VERSION           := $(XZ)-5.2.2
 XZ_SRC               := $(XZ_VERSION).tar.xz
 XZ_DOWNLOAD          := "http://tukaani.org/xz/xz-5.2.2.tar.xz"
 
+LIBARCHIVE           := libarchive
+LIBARCHIVE_VERSION   := $(LIBARCHIVE)-3.1.2
+LIBARCHIVE_SRC       := $(LIBARCHIVE_VERSION).tar.gz
+LIBARCHIVE_DOWNLOAD  := "http://www.libarchive.org/downloads/libarchive-3.1.2.tar.gz"
+
 export PORTLIBS        := $(DEVKITPRO)/portlibs/3ds
 export PATH            := $(DEVKITARM)/bin:$(PATH)
 export PKG_CONFIG_PATH := $(PORTLIBS)/lib/pkgconfig
-export CFLAGS          := -march=armv6k -mtune=mpcore -mfloat-abi=hard -O2 \
+export CFLAGS          := -g -march=armv6k -mtune=mpcore -mfloat-abi=hard -O2 \
                           -mword-relocations -ffunction-sections -fdata-sections
 export CPPFLAGS        := -I$(PORTLIBS)/include
 export LDFLAGS         := -L$(PORTLIBS)/lib
@@ -111,7 +111,6 @@ export LDFLAGS         := -L$(PORTLIBS)/lib
 	$(MXML) \
 	$(EXPAT) \
 	$(LIBXML2) \
-	$(OPENAL) \
 	$(JANSSON) \
 	$(PHYSFS) \
 	$(LIBMAD) \
@@ -120,7 +119,8 @@ export LDFLAGS         := -L$(PORTLIBS)/lib
 	$(GIFLIB) \
 	$(LIBCONFIG) \
 	$(BZIP2) \
-	$(XZ)
+	$(XZ) \
+	$(LIBARCHIVE)
 
 all:
 	@echo "Please choose one of the following targets:"
@@ -133,7 +133,6 @@ all:
 	@echo "  $(MXML)"
 	@echo "  $(EXPAT)"
 	@echo "  $(LIBXML2)"
-	@echo "  $(OPENAL)"
 	@echo "  $(JANSSON)"
 	@echo "  $(PHYSFS) (requires zlib to be installed)"
 	@echo "  $(LIBMAD)"
@@ -143,6 +142,7 @@ all:
 	@echo "  $(LIBCONFIG)"
 	@echo "  $(BZIP2)"
 	@echo "  $(XZ)"
+	@echo "  $(LIBARCHIVE)"
 
 $(FREETYPE): $(FREETYPE_SRC)
 	@[ -d $(FREETYPE_VERSION) ] || tar -xaf $<
@@ -200,13 +200,6 @@ $(LIBXML2): $(LIBXML2_SRC)
 	 ./configure --prefix=$(PORTLIBS) --host=arm-none-eabi --disable-shared --enable-static --without-http --without-ftp --without-threads
 	@$(MAKE) -C $(LIBXML2_VERSION) libxml2.la
 
-$(OPENAL): $(OPENAL_SRC)
-	@[ -d $(OPENAL_VERSION) ] || tar -xaf $<
-	@cd $(OPENAL_VERSION)/build && \
-	cmake -DCMAKE_TOOLCHAIN_FILE=../../arm.cmake ..
-	# ./configure --prefix=$(PORTLIBS) --host=arm-none-eabi --disable-shared --enable-static
-	@$(MAKE) -C $(OPENAL_VERSION)
-
 $(JANSSON): $(JANSSON_SRC)
 	@[ -d $(JANSSON_VERSION) ] || tar -xaf $<
 	@cd $(JANSSON_VERSION) && \
@@ -262,6 +255,13 @@ $(XZ): $(XZ_SRC)
 	 ./configure --prefix=$(PORTLIBS) --host=arm-none-eabi --disable-shared --enable-static --disable-xz
 	@$(MAKE) -C $(XZ_VERSION)
 
+$(LIBARCHIVE): $(LIBARCHIVE_SRC)
+	@[ -d $(LIBARCHIVE_VERSION) ] || tar -xaf $<
+	@cd $(LIBARCHIVE_VERSION) && \
+	 patch -Np1 -i ../libarchive.patch && \
+	 ./configure --prefix=$(PORTLIBS) --host=arm-none-eabi --disable-shared --enable-static --without-nettle --without-openssl --without-xml2 --without-expat --without-iconv --disable-bsdtar --disable-bsdcpio --disable-acl
+	@$(MAKE) -C $(LIBARCHIVE_VERSION)
+
 # Downloads
 $(LIBCONFIG_SRC):
 	wget -O $@ $(LIBCONFIG_DOWNLOAD)
@@ -283,8 +283,6 @@ $(EXPAT_SRC):
 	wget -O $@ $(EXPAT_DOWNLOAD)
 $(LIBXML2_SRC):
 	wget -O $@ $(LIBXML2_DOWNLOAD)
-$(OPENAL_SRC):
-	wget -O $@ $(OPENAL_DOWNLOAD)
 $(JANSSON_SRC):
 	wget -O $@ $(JANSSON_DOWNLOAD)
 $(PHYSFS_SRC):
@@ -301,8 +299,10 @@ $(BZIP2_SRC):
 	wget -O $@ $(BZIP2_DOWNLOAD)
 $(XZ_SRC):
 	wget -O $@ $(XZ_DOWNLOAD)
+$(LIBARCHIVE_SRC):
+	wget -O $@ $(LIBARCHIVE_DOWNLOAD)
 
-install-zlib: 
+install-zlib:
 	@$(MAKE) -C $(ZLIB_VERSION) install
 
 install:
@@ -314,7 +314,6 @@ install:
 	@[ ! -d $(MXML_VERSION) ] || $(MAKE) -C $(MXML_VERSION) install-libmxml.a
 	@[ ! -d $(EXPAT_VERSION) ] || $(MAKE) -C $(EXPAT_VERSION) install
 	@[ ! -d $(LIBXML2_VERSION) ] || $(MAKE) -C $(LIBXML2_VERSION) install
-	@[ ! -d $(OPENAL_VERSION) ] || $(MAKE) -C $(OPENAL_VERSION) install
 	@[ ! -d $(JANSSON_VERSION) ] || $(MAKE) -C $(JANSSON_VERSION) install
 	@[ ! -d $(PHYSFS_VERSION) ] || $(MAKE) -C $(PHYSFS_VERSION) install
 	@[ ! -d $(LIBMAD_VERSION) ] || $(MAKE) -C $(LIBMAD_VERSION) install
@@ -324,6 +323,7 @@ install:
 	@[ ! -d $(LIBCONFIG_VERSION) ] || $(MAKE) -C $(LIBCONFIG_VERSION) install
 	@[ ! -d $(BZIP2_VERSION) ] || $(MAKE) -C $(BZIP2_VERSION) PREFIX="$(PORTLIBS)" install
 	@[ ! -d $(XZ_VERSION) ] || $(MAKE) -C $(XZ_VERSION) install
+	@[ ! -d $(LIBARCHIVE_VERSION) ] || $(MAKE) -C $(LIBARCHIVE_VERSION) install
 
 clean:
 	@$(RM) -r $(FREETYPE_VERSION)
@@ -335,7 +335,6 @@ clean:
 	@$(RM) -r $(MXML_VERSION)
 	@$(RM) -r $(EXPAT_VERSION)
 	@$(RM) -r $(LIBXML2_VERSION)
-	@$(RM) -r $(OPENAL_VERSION)
 	@$(RM) -r $(JANSSON_VERSION)
 	@$(RM) -r $(PHYSFS_VERSION)
 	@$(RM) -r $(LIBMAD_VERSION)
@@ -345,3 +344,4 @@ clean:
 	@$(RM) -r $(LIBCONFIG_VERSION)
 	@$(RM) -r $(BZIP2_VERSION)
 	@$(RM) -r $(XZ_VERSION)
+	@$(RM) -r $(LIBARCHIVE_VERSION)
