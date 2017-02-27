@@ -93,12 +93,23 @@ LIBARCHIVE_VERSION   := $(LIBARCHIVE)-3.1.2
 LIBARCHIVE_SRC       := $(LIBARCHIVE_VERSION).tar.gz
 LIBARCHIVE_DOWNLOAD  := "http://www.libarchive.org/downloads/libarchive-3.1.2.tar.gz"
 
+NETTLE                 := nettle
+NETTLE_VERSION          := $(NETTLE)-3.3
+NETTLE_SRC              := $(NETTLE_VERSION).tar.gz
+NETTLE_DOWNLOAD         := "https://ftp.gnu.org/gnu/nettle/nettle-3.3.tar.gz"
+
+WSLAY                  := wslay
+WSLAY_VERSION          := $(WSLAY)-release-1.0.0
+WSLAY_SRC              := $(WSLAY_VERSION).tar.gz
+WSLAY_DOWNLOAD         := "https://github.com/tatsuhiro-t/wslay/archive/release-1.0.0.tar.gz"
+
+
 export PORTLIBS        := $(DEVKITPRO)/portlibs/3ds
 export PATH            := $(DEVKITARM)/bin:$(PATH)
 export PKG_CONFIG_PATH := $(PORTLIBS)/lib/pkgconfig
-export CFLAGS          := -g -march=armv6k -mtune=mpcore -mfloat-abi=hard -O2 \
-                          -mword-relocations -ffunction-sections -fdata-sections
-export CPPFLAGS        := -I$(PORTLIBS)/include
+export CFLAGS          := -g -march=armv6k -mtune=mpcore -mfloat-abi=hard -O3 \
+                          -mword-relocations -ffunction-sections
+export CPPFLAGS        := -I$(PORTLIBS)/include -I$(CTRULIB)/include
 export LDFLAGS         := -L$(PORTLIBS)/lib
 
 .PHONY: all install install-zlib clean \
@@ -120,7 +131,9 @@ export LDFLAGS         := -L$(PORTLIBS)/lib
 	$(LIBCONFIG) \
 	$(BZIP2) \
 	$(XZ) \
-	$(LIBARCHIVE)
+	$(LIBARCHIVE) \
+	$(NETTLE) \
+	$(WSLAY)
 
 all:
 	@echo "Please choose one of the following targets:"
@@ -143,6 +156,8 @@ all:
 	@echo "  $(BZIP2)"
 	@echo "  $(XZ)"
 	@echo "  $(LIBARCHIVE)"
+	@echo "  $(NETTLE)"
+	@echo "  $(WSLAY)"
 
 $(FREETYPE): $(FREETYPE_SRC)
 	@[ -d $(FREETYPE_VERSION) ] || tar -xaf $<
@@ -262,6 +277,21 @@ $(LIBARCHIVE): $(LIBARCHIVE_SRC)
 	 ./configure --prefix=$(PORTLIBS) --host=arm-none-eabi --disable-shared --enable-static --without-nettle --without-openssl --without-xml2 --without-expat --without-iconv --disable-bsdtar --disable-bsdcpio --disable-acl
 	@$(MAKE) -C $(LIBARCHIVE_VERSION)
 
+
+$(NETTLE): $(NETTLE_SRC)
+	@[ -d $(NETTLE_VERSION) ] || tar -xaf $<
+	@cd $(NETTLE_VERSION) && \
+	 ./configure --prefix=$(PORTLIBS) --host=arm-none-eabi --disable-shared --enable-static --disable-tools
+	@$(MAKE) -C $(NETTLE_VERSION) libnettle.a
+
+$(WSLAY): $(WSLAY_SRC)
+	@[ -d $(WSLAY_VERSION) ] || tar -xaf $<
+	@cd $(WSLAY_VERSION) && \
+	 autoreconf -i && automake && autoconf && \
+	 ./configure --prefix=$(PORTLIBS) --host=arm-none-eabi --disable-shared --enable-static
+	@$(MAKE) -C $(WSLAY_VERSION)/lib
+
+
 # Downloads
 $(LIBCONFIG_SRC):
 	wget -O $@ $(LIBCONFIG_DOWNLOAD)
@@ -301,6 +331,10 @@ $(XZ_SRC):
 	wget -O $@ $(XZ_DOWNLOAD)
 $(LIBARCHIVE_SRC):
 	wget -O $@ $(LIBARCHIVE_DOWNLOAD)
+$(NETTLE_SRC):
+	wget -O $@ $(NETTLE_DOWNLOAD)
+$(WSLAY_SRC):
+	wget -O $@ $(WSLAY_DOWNLOAD)
 
 install-zlib:
 	@$(MAKE) -C $(ZLIB_VERSION) install
@@ -324,6 +358,8 @@ install:
 	@[ ! -d $(BZIP2_VERSION) ] || $(MAKE) -C $(BZIP2_VERSION) PREFIX="$(PORTLIBS)" install
 	@[ ! -d $(XZ_VERSION) ] || $(MAKE) -C $(XZ_VERSION) install
 	@[ ! -d $(LIBARCHIVE_VERSION) ] || $(MAKE) -C $(LIBARCHIVE_VERSION) install
+	@[ ! -d $(NETTLE_VERSION) ] || $(MAKE) -C $(NETTLE_VERSION) install-static
+	@[ ! -d $(WSLAY_VERSION) ] || $(MAKE) -C $(WSLAY_VERSION)/lib install
 
 clean:
 	@$(RM) -r $(FREETYPE_VERSION)
@@ -345,3 +381,5 @@ clean:
 	@$(RM) -r $(BZIP2_VERSION)
 	@$(RM) -r $(XZ_VERSION)
 	@$(RM) -r $(LIBARCHIVE_VERSION)
+	@$(RM) -r $(NETTLE_VERSION)
+	@$(RM) -r $(WSLAY_VERSION)

@@ -1,4 +1,4 @@
-3DS Portlibs [![Build Status](https://travis-ci.org/cpp3ds/3ds_portlibs.svg?branch=master)](https://travis-ci.org/cpp3ds/3ds_portlibs)
+3DS Portlibs [![Build Status](https://travis-ci.org/Cruel/3ds_portlibs.svg?branch=master)](https://travis-ci.org/Cruel/3ds_portlibs)
 ============
 
 Here is a Makefile for building various portlibs for 3DS. You need to first
